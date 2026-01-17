@@ -4,6 +4,7 @@ python-dotenv
 PyJWT
 redis
 pinecone
+multipart
 
 # LangChain ecosystem
 langchain
