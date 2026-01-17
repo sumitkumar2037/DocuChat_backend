@@ -17,13 +17,13 @@ load_dotenv()
 #create the fastapi instance
 app=FastAPI()
 # CORS (adjust origins in production)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://docu-chat-frontend-phi.vercel.app/"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 #directory path to save file
 BASE_UPLOAD_DIR = "items"

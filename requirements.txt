@@ -3,12 +3,16 @@ uvicorn
 python-dotenv
 PyJWT
 redis
+pinecone
 
 # LangChain ecosystem
 langchain
 langchain-core
 langchain-community
 langchain-google-genai
+langchain_openai
+langchain_pinecone
+langchain_text_splitters
 
 # Vector DB (choose one)
 qdrant-client
