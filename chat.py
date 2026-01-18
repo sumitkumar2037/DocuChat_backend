@@ -65,7 +65,8 @@ def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
     
 
 def load_chat_from_redis(guest_id:str,limit=6)->list:
-    stored_msg=redis_client.lrange(guest_id,-limit,-1)
+    key = f"chat:{guest_id}" 
+    stored_msg=redis_client.lrange(key,-limit,-1)
     messages=[]
     for msg in stored_msg:
         m=json.loads(msg)
@@ -74,6 +75,8 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
         else:
             messages.append(AIMessage(m['content']))
     print('stored message in redis :' ,messages)
+    print("ALL REDIS KEYS:", redis_client.keys("chat:*"))
+
     return messages
 
 # send this prompt to llm 
