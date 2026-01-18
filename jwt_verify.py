@@ -48,7 +48,7 @@ def verify_jwt(authorization: str = Header(...)):
                 options={"verify_exp": False}
             )
             guest_id = payload.get("sub")
-            logger.info('token expired for guest_id ',guest_id)
+            logger.info(f'token expired for guest_id {guest_id}')
             if guest_id:
                 cleanup_guest_session(guest_id)
         except jwt.InvalidTokenError:

@@ -18,4 +18,4 @@ def cleanup_guest_session(guest_id: str):
 
     # 3️⃣ Delete vectors in pinecone
     pc.delete(filter={"guest_id": guest_id})
-    logger.info('session for guest_id ',guest_id,'is cleaned ',)
+    logger.info(f'session for guest_id {guest_id} is cleaned ')

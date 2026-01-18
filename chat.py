@@ -75,8 +75,8 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
             messages.append(HumanMessage(m['content']))
         else:
             messages.append(AIMessage(m['content']))
-    logger.info('stored message in redis :' ,messages)
-    logger.info("ALL REDIS KEYS:", redis_client.keys("chat:*"))
+    logger.info(f'stored message in redis : {messages}')
+    logger.info(f'ALL REDIS KEYS:" {redis_client.keys("chat:*")}')
 
     return messages
 
