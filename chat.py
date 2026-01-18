@@ -61,6 +61,7 @@ def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
         key,
         json.dumps({"role":role,"content":content})
     )
+    print('saved chat in redis instance')
     
 
 def load_chat_from_redis(guest_id:str,limit=6)->list:
@@ -72,6 +73,7 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
             messages.append(HumanMessage(m['content']))
         else:
             messages.append(AIMessage(m['content']))
+    print('stored message in redis :' ,messages)
     return messages
 
 # send this prompt to llm 

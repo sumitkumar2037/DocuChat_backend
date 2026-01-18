@@ -86,8 +86,10 @@ async def chat(
      
     
     save_chat_in_redis(guest_id,'user',query)
-    chat_history=load_chat_from_redis(guest_id,-6)
+    chat_history=load_chat_from_redis(guest_id,10)
+    print('current chat history :',chat_history)
     context=query_retrival(query,guest_id)
+    print('context ',context)
     result=""
     try:
         result = primary_chain.invoke({
@@ -113,6 +115,7 @@ async def chat(
     ai_message=AIMessage(result).content
     print(ai_message)
     save_chat_in_redis(guest_id,'assitant',ai_message)
+    print('final chat history :',chat_history)
     return {'ai_message':ai_message}
     
         
