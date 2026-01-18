@@ -5,6 +5,7 @@ PyJWT
 redis
 pinecone
 python-multipart
+pypdf
 
 # LangChain ecosystem
 langchain
