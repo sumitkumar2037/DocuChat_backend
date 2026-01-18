@@ -10,33 +10,34 @@ import redis
 import json
 import os
 from langchain_openai import ChatOpenAI
+import logging
+
+logger=logging.getLogger(__name__)
 #----------------------------------------------
 #.       Redis Implemetation
 #----------------------------------------------
 
 #load the api key 
 load_dotenv()
-
+    
 # prompt 
 template = ChatPromptTemplate.from_messages([
     ("system", 
-     "You are an intelligent document assistant. Your purpose is to help users understand their documents by answering questions accurately.\n\n"
-     " CORE PRINCIPLES:\n"
-     "• Answer EXCLUSIVELY based on the context provided below\n"
-     "• Be accurate, clear, and helpful\n"
-     "• Admit when information is not available in the documents\n"
-     "• Never fabricate or assume information\n\n"
-     " WHEN INFORMATION IS AVAILABLE:\n"
-     "• Provide a direct, comprehensive answer\n"
-     "• Structure your response clearly\n"
-     "• Reference specific sections when helpful\n"
-     "• Use natural, user-friendly language\n\n"
-     " WHEN INFORMATION IS NOT AVAILABLE:\n"
-     "Respond with: \"I couldn't find information about that in the provided documents. The available content covers [briefly mention what topics are in context]. Is there something else from the document I can help you with?\"\n\n"
-     " CONTEXT FROM DOCUMENTS:\n"
+     "You are a helpful document assistant. You can communicate in English, Hindi, and Hinglish.\n\n"
+     "CRITICAL INSTRUCTIONS:\n"
+     "1. ALWAYS respond in the SAME LANGUAGE as the user's question\n"
+     "   - If question is in Hindi → Answer in Hindi\n"
+     "   - If question is in English → Answer in English\n"
+     "   - If question is in Hinglish → Answer in Hinglish\n\n"
+     "2. Use ONLY the information from the context below to answer\n"
+     "3. Explain technical terms in simple language that matches the user's language\n"
+     "4. If the answer exists in context, provide a clear explanation\n"
+     "5. If the answer is NOT in context, say:\n"
+     "   - In Hindi: 'मुझे इस बारे में दस्तावेज़ में जानकारी नहीं मिली। दस्तावेज़ में [topic] के बारे में जानकारी है। क्या मैं उसमें कुछ और मदद कर सकता हूं?'\n"
+     "   - In English: 'I couldn't find information about that in the documents. The documents cover [topic]. Can I help with something else?'\n\n"
+     " DOCUMENT CONTEXT:\n"
      "{context}\n\n"
-     "---\n"
-     "Now, answer the user's question based solely on the above context."
+     "Now answer the user's question in their language using only the above context."
     ),
     MessagesPlaceholder(variable_name='chat_history'),
     ('human', '{query}')
@@ -61,7 +62,7 @@ def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
         key,
         json.dumps({"role":role,"content":content})
     )
-    print('saved chat in redis instance')
+    logger('saved chat in redis instance')
     
 
 def load_chat_from_redis(guest_id:str,limit=6)->list:
@@ -74,8 +75,8 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
             messages.append(HumanMessage(m['content']))
         else:
             messages.append(AIMessage(m['content']))
-    print('stored message in redis :' ,messages)
-    print("ALL REDIS KEYS:", redis_client.keys("chat:*"))
+    logger('stored message in redis :' ,messages)
+    logger("ALL REDIS KEYS:", redis_client.keys("chat:*"))
 
     return messages
 
