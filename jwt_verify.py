@@ -9,7 +9,7 @@ load_dotenv()
 #create jwt with secrect key
 SECRET_KEY = os.getenv("JWT_SECRET")
 JWT_ALGO = "HS256"
-JWT_EXP_MINUTES = 1
+JWT_EXP_MINUTES = 5
 
 def create_guest_jwt(guest_id: str):
     payload = {

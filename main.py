@@ -75,7 +75,7 @@ async def upload_file(
     return {
         "message": "File uploaded successfully",
         "token": token,
-        "expires_in": 1 * 1
+        "expires_in": 5 * 60
     }
 
 @app.post("/chat")
