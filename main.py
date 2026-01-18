@@ -29,6 +29,13 @@ app.add_middleware(
 BASE_UPLOAD_DIR = "items"
 os.makedirs(BASE_UPLOAD_DIR, exist_ok=True)
 
+@app.get("/")
+async def health_check():
+    return {"status": "ok", "message": "API is running"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
 
 
 @app.post("/upload")
