@@ -6,6 +6,8 @@ from session_management import cleanup_guest_session
 import uuid
 from datetime import datetime, timedelta
 load_dotenv()
+import logging
+logger=logging.getLogger(__name__)
 #create jwt with secrect key
 SECRET_KEY = os.getenv("JWT_SECRET")
 JWT_ALGO = "HS256"
@@ -46,7 +48,7 @@ def verify_jwt(authorization: str = Header(...)):
                 options={"verify_exp": False}
             )
             guest_id = payload.get("sub")
-            print('token expired for guest_id ',guest_id)
+            logger.info('token expired for guest_id ',guest_id)
             if guest_id:
                 cleanup_guest_session(guest_id)
         except jwt.InvalidTokenError:

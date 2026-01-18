@@ -62,7 +62,7 @@ def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
         key,
         json.dumps({"role":role,"content":content})
     )
-    logger('saved chat in redis instance')
+    logger.info('saved chat in redis instance')
     
 
 def load_chat_from_redis(guest_id:str,limit=6)->list:
@@ -75,8 +75,8 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
             messages.append(HumanMessage(m['content']))
         else:
             messages.append(AIMessage(m['content']))
-    logger('stored message in redis :' ,messages)
-    logger("ALL REDIS KEYS:", redis_client.keys("chat:*"))
+    logger.info('stored message in redis :' ,messages)
+    logger.info("ALL REDIS KEYS:", redis_client.keys("chat:*"))
 
     return messages
 

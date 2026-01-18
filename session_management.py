@@ -2,6 +2,9 @@ import shutil
 import os
 from chat import redis_client
 from model import pc
+import logging
+
+logger=logging.getLogger(__name__)
 
 
 def cleanup_guest_session(guest_id: str):
@@ -15,4 +18,4 @@ def cleanup_guest_session(guest_id: str):
 
     # 3️⃣ Delete vectors in pinecone
     pc.delete(filter={"guest_id": guest_id})
-    print('session for guest_id ',guest_id,'is cleaned ',)
+    logger.info('session for guest_id ',guest_id,'is cleaned ',)

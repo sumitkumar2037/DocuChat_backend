@@ -94,7 +94,7 @@ async def chat(
     
     save_chat_in_redis(guest_id,'user',query)
     chat_history=load_chat_from_redis(guest_id,10)
-    logger('current chat history :',chat_history)
+    logger.info('current chat history :',chat_history)
     context=query_retrival(query,guest_id)
     result=""
     try:
@@ -112,7 +112,7 @@ async def chat(
                 "query": query
             })
         except Exception as fallback_error:
-             logger("Fallback LLM failed:", fallback_error)
+             logger.info("Fallback LLM failed:", fallback_error)
 
         return {
             "ai_message": "AI services are currently unavailable."
@@ -120,7 +120,7 @@ async def chat(
 
     ai_message=AIMessage(result).content
     save_chat_in_redis(guest_id,'assitant',ai_message)
-    logger('final chat history :',chat_history)
+    logger.info('final chat history :',chat_history)
     return {'ai_message':ai_message}
     
         
