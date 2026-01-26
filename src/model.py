@@ -9,6 +9,7 @@ import os
 import json
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from fastapi import Depends
+import asyncio
 #load the all api key
 load_dotenv()
 
@@ -25,9 +26,9 @@ def get_loader(file_path):
         return None
     
 
-def load_files_from_folder(guest_id:str):
+async def load_files_from_folder(guest_id:str):
     if not guest_id:
-        return None
+        return []
     all_docs=[]
     folder_path=f"items/{guest_id}"
     files=[]
@@ -35,11 +36,17 @@ def load_files_from_folder(guest_id:str):
     files.extend(glob.glob(f"{folder_path}/*.txt"))
     files.extend(glob.glob(f"{folder_path}/*.docx"))
 
+    load=asyncio.get_running_loop()
+
     for file_path in files:
+        
         loader=get_loader(file_path)
         if not loader:
             continue
-        docs=loader.load()
+        docs=await load.run_in_executor(
+        None,
+        loader.load
+    )
         #attach meta deta 
         for d in docs:
             d.metadata['guest_id']=guest_id
@@ -50,8 +57,8 @@ def load_files_from_folder(guest_id:str):
 
 #chunk all the doc=list[Document]
 text_splitter=RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=100
+    chunk_size=1200,
+    chunk_overlap=200
 )
 
 #embedding vector model  

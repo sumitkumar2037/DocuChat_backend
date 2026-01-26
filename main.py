@@ -4,16 +4,23 @@ import requests
 import os
 from dotenv import load_dotenv
 import shutil
-from modelCall import query_retrival
-from chat import save_chat_in_redis,load_chat_from_redis,primary_chain,fallback_chain
+from src.modelCall import query_retrival
+from src.chat import save_chat_in_redis,load_chat_from_redis,primary_chain,fallback_chain
 from langchain.messages import AIMessage
 import uuid
 from datetime import datetime, timedelta
-import jwt
-from jwt_verify import create_guest_jwt,verify_jwt
-from session_management import cleanup_guest_session
+import jwt 
+from src.session.jwt_verify import create_guest_jwt,verify_jwt
+from src.session.session_management import cleanup_guest_session
 import logging
-
+import aiofiles
+from src.model import load_files_from_folder,embed_chunk_to_pinecone,get_loader
+from src.classifer.classifier_tool import take_user_query
+from src.tool.document_rag import route_dacument_rag
+from src.tool.general_llm import route_general_llm
+from src.tool.web_search import route_web_search
+import  asyncio
+from src.store.classifier_context import save_metadata_from_doc,save_summary
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -26,20 +33,20 @@ load_dotenv()
 
 app=FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 # app.add_middleware(
 #     CORSMiddleware,
-#     allow_origins=["*"],
+#     allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
 #     allow_credentials=True,
 #     allow_methods=["*"],
 #     allow_headers=["*"],
 # )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #directory path to save file
 BASE_UPLOAD_DIR = "items"
@@ -68,13 +75,43 @@ async def upload_file(
     guest_id=str(uuid.uuid4())
     guest_id_dir = os.path.join(BASE_UPLOAD_DIR, guest_id)
     os.makedirs(guest_id_dir, exist_ok=True)
-
-    # Save file
     file_path = os.path.join(guest_id_dir, file.filename)
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    async with aiofiles.open(file_path,'wb') as buffer_chunk:
+        chunk=await file.read(1024*1024)
+        while chunk:
+            await buffer_chunk.write(chunk)
+            chunk=await file.read(1024*1024)
+    loop=asyncio.get_running_loop()
+    docs=await loop.run_in_executor(
+        None,
+        get_loader(file_path).load
+    )
+    for d in docs:
+            d.metadata['guest_id']=guest_id
+            d.metadata['source']=file_path
     
+    #embade the docs list
+    loop=asyncio.get_running_loop()
+    await loop.run_in_executor(None,embed_chunk_to_pinecone,guest_id,docs)
+    file_metadata = {
+        "guest_id": guest_id,
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "total_pages": len(docs),
+        "file_path": file_path
+    }
+    save_metadata_from_doc(guest_id,file_metadata)
+    pages_content = []
+
+    for doc in docs:
+        pages_content.append({
+            "page_number": doc.metadata.get("page", None),
+            "content": doc.page_content
+        })
+    full_text = "\n\n".join([p["content"] for p in pages_content])
+    save_summary(full_text,guest_id)
+
     #create a jwt token :
     token = create_guest_jwt(guest_id)
 
@@ -85,42 +122,27 @@ async def upload_file(
         "expires_in": 5 * 60
     }
 
+
+
 @app.post("/chat")
 async def chat(
     query:str=Form(...),
     guest_id:str=Depends(verify_jwt)
 ):
-     
-    
-    save_chat_in_redis(guest_id,'user',query)
-    chat_history=load_chat_from_redis(guest_id,10)
-    logger.info(f'current chat history : {chat_history}')
-    context=query_retrival(query,guest_id)
-    result=""
-    try:
-        result = primary_chain.invoke({
-        "chat_history": chat_history,
-        "context": context,
-        "query": query
-    })
-    except Exception as primary_error:
-        print("Primary LLM failed:", primary_error)
-        try:
-            result = fallback_chain.invoke({
-                "chat_history": chat_history,
-                "context": context,
-                "query": query
-            })
-        except Exception as fallback_error:
-             logger.info(f"Fallback LLM failed: {fallback_error}")
-
-        return {
-            "ai_message": "AI services are currently unavailable."
-        }
-
-    ai_message=AIMessage(result).content
+    #taking user query into agentic route 
+    route_result=take_user_query(query,guest_id)
+    final_result=""
+    if route_result=='DOCUMENT_RAG':
+        final_result=await route_dacument_rag(query,guest_id)
+    if route_result=='WEB_SEARCH':
+        final_result=await route_web_search(query,guest_id)
+    if route_result=='GENERAL_LLM':
+        final_result= await route_general_llm(query,guest_id)
+    logger.info(f'final_result:{final_result}')
+    if final_result is None:
+        final_result="no answer from llm"
+    ai_message=AIMessage(final_result).content
     save_chat_in_redis(guest_id,'assitant',ai_message)
-    logger.info(f'final chat history : {chat_history}')
     return {'ai_message':ai_message}
     
         

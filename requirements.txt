@@ -6,7 +6,8 @@ redis
 pinecone
 python-multipart
 pypdf
-
+aiofiles
+tavily-python
 # LangChain ecosystem
 langchain
 langchain-core
@@ -15,7 +16,8 @@ langchain-google-genai
 langchain_openai
 langchain_pinecone
 langchain_text_splitters
-
+langchain-groq
+langchain-tavily
 # Vector DB (choose one)
 qdrant-client
 # pinecone-client

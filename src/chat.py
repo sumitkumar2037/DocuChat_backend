@@ -1,4 +1,4 @@
-from modelCall import query_retrival
+from src.modelCall import query_retrival
 from langchain.messages import HumanMessage,AIMessage,SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -11,6 +11,7 @@ import json
 import os
 from langchain_openai import ChatOpenAI
 import logging
+from langchain_groq import ChatGroq
 
 logger=logging.getLogger(__name__)
 #----------------------------------------------
@@ -50,19 +51,19 @@ template = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name='chat_history'),
     ('human', '{query}')
 ])#local
-# redis_client=redis.Redis(
-#     host="localhost",
-#     port=6379,
-#     decode_responses=True
-# )
-
-#production
-REDIS_URL = os.getenv("REDIS_URL")
-
-redis_client = redis.from_url(
-    REDIS_URL,
+redis_client=redis.Redis(
+    host="localhost",
+    port=6379,
     decode_responses=True
 )
+
+#production
+# REDIS_URL = os.getenv("REDIS_URL")
+
+# redis_client = redis.from_url(
+#     REDIS_URL,
+#     decode_responses=True
+# )
 def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
     key=f"chat:{guest_id}"
     redis_client.rpush(
@@ -82,17 +83,15 @@ def load_chat_from_redis(guest_id:str,limit=6)->list:
             messages.append(HumanMessage(m['content']))
         else:
             messages.append(AIMessage(m['content']))
-    logger.info(f'stored message in redis : {messages}')
-    logger.info(f'ALL REDIS KEYS:" {redis_client.keys("chat:*")}')
 
     return messages
 
 # send this prompt to llm 
 model=ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 model2=ChatOpenAI(model="nvidia/nemotron-3-nano-30b-a3b:free",base_url="https://openrouter.ai/api/v1")
-
+model3=ChatGroq(model='openai/gpt-oss-120b')
 parser=StrOutputParser()
-primary_chain=template | model | parser
+primary_chain=template | model3 | parser
 fallback_chain=template | model2 | parser
 
 

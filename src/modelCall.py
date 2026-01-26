@@ -1,10 +1,8 @@
-from model import pc , embed_chunk_to_pinecone,load_files_from_folder
+from src.model import pc , embed_chunk_to_pinecone,load_files_from_folder
 
 
 # dynamic query 
-def query_retrival(query:str,guest_id)->str:
-    docs=load_files_from_folder(guest_id)
-    embed_chunk_to_pinecone(guest_id,docs)
+async def query_retrival(query:str,guest_id)->str:
     retriever = pc.as_retriever(
     search_type="similarity",   
     search_kwargs={"k": 4,'guest_id':guest_id}

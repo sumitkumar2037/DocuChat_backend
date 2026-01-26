@@ -2,10 +2,10 @@ import jwt
 from fastapi import Depends, HTTPException, Header
 from dotenv import load_dotenv
 import os
-from session_management import cleanup_guest_session
+from src.session.session_management import cleanup_guest_session
 import uuid
 from datetime import datetime, timedelta
-load_dotenv()
+load_dotenv()  
 import logging
 logger=logging.getLogger(__name__)
 #create jwt with secrect key
