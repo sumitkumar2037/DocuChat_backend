@@ -33,20 +33,20 @@ load_dotenv()
 
 app=FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 #directory path to save file
 BASE_UPLOAD_DIR = "items"

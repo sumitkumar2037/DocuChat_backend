@@ -51,19 +51,19 @@ template = ChatPromptTemplate.from_messages([
     MessagesPlaceholder(variable_name='chat_history'),
     ('human', '{query}')
 ])#local
-redis_client=redis.Redis(
-    host="localhost",
-    port=6379,
-    decode_responses=True
-)
-
-#production
-# REDIS_URL = os.getenv("REDIS_URL")
-
-# redis_client = redis.from_url(
-#     REDIS_URL,
+# redis_client=redis.Redis(
+#     host="localhost",
+#     port=6379,
 #     decode_responses=True
 # )
+
+#production
+REDIS_URL = os.getenv("REDIS_URL")
+
+redis_client = redis.from_url(
+    REDIS_URL,
+    decode_responses=True
+)
 def save_chat_in_redis(guest_id:str,role:str,content:str)->None:
     key=f"chat:{guest_id}"
     redis_client.rpush(
