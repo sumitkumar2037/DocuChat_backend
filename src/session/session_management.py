@@ -12,7 +12,7 @@ def cleanup_guest_session(guest_id: str):
     redis_client.delete(f"chat:{guest_id}")
     redis_client.delete(f"doc_metadata:{guest_id}")
     redis_client.delete(f"doc_summary:{guest_id}")
-
+    redis_client.delete(f'status:{guest_id}')
     # Delete uploaded files
     folder = os.path.join("items", guest_id)
     if os.path.exists(folder):

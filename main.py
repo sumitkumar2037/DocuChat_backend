@@ -21,6 +21,8 @@ from src.tool.general_llm import route_general_llm
 from src.tool.web_search import route_web_search
 import  asyncio
 from src.store.classifier_context import save_metadata_from_doc,save_summary
+from src.store.redis_config import redis_client
+from fastapi import BackgroundTasks
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -33,20 +35,20 @@ load_dotenv()
 
 app=FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 # app.add_middleware(
 #     CORSMiddleware,
-#     allow_origins=["*"],
+#     allow_origins=["https://docu-chat-frontend-phi.vercel.app"],
 #     allow_credentials=True,
 #     allow_methods=["*"],
 #     allow_headers=["*"],
 # )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 #directory path to save file
 BASE_UPLOAD_DIR = "items"
@@ -63,7 +65,7 @@ async def health():
 
 @app.post("/upload")
 async def upload_file(
-    
+    background_tasks:BackgroundTasks,
     file: UploadFile = File(...)
 ):
     # Validate file type
@@ -82,35 +84,15 @@ async def upload_file(
         while chunk:
             await buffer_chunk.write(chunk)
             chunk=await file.read(1024*1024)
-    loop=asyncio.get_running_loop()
-    docs=await loop.run_in_executor(
-        None,
-        get_loader(file_path).load
+    redis_client.set(f'status:{guest_id}','unknown')
+    background_tasks.add_task(
+        process_document,
+        guest_id,
+        file_path,
+        file.filename,
+        file.content_type
     )
-    for d in docs:
-            d.metadata['guest_id']=guest_id
-            d.metadata['source']=file_path
     
-    #embade the docs list
-    loop=asyncio.get_running_loop()
-    await loop.run_in_executor(None,embed_chunk_to_pinecone,guest_id,docs)
-    file_metadata = {
-        "guest_id": guest_id,
-        "filename": file.filename,
-        "content_type": file.content_type,
-        "total_pages": len(docs),
-        "file_path": file_path
-    }
-    save_metadata_from_doc(guest_id,file_metadata)
-    pages_content = []
-
-    for doc in docs:
-        pages_content.append({
-            "page_number": doc.metadata.get("page", None),
-            "content": doc.page_content
-        })
-    full_text = "\n\n".join([p["content"] for p in pages_content])
-    save_summary(full_text,guest_id)
 
     #create a jwt token :
     token = create_guest_jwt(guest_id)
@@ -119,7 +101,8 @@ async def upload_file(
     return {
         "message": "File uploaded successfully",
         "token": token,
-        "expires_in": 5 * 60
+        "expires_in": 5 * 60,
+        'status':'processing'
     }
 
 
@@ -156,8 +139,43 @@ async def exit(token:str=Depends(verify_jwt)):
         raise HTTPException(status_code=401,detail='something went wrong')
     return {'status_code':200 , 'detail':"deletion of user session successfully"}
     
+@app.get("/status")
+def check_status(token:str=Depends(verify_jwt)):
+    return {
+        "status": redis_client.get(f'status:{token}')
+    }
 
 
+def process_document(guest_id: str, file_path: str, filename: str, content_type: str):
+    try:
+        redis_client.set(f'status:{guest_id}',"processing")
+
+        # 1. Load document (blocking)
+        loader = get_loader(file_path)
+        docs = loader.load()
+
+        # Attach metadata
+        for d in docs:
+            d.metadata["guest_id"] = guest_id
+            d.metadata["source"] = file_path
+
+        embed_chunk_to_pinecone(guest_id, docs)
+        file_metadata = {
+            "guest_id": guest_id,
+            "filename": filename,
+            "content_type": content_type,
+            "total_pages": len(docs),
+            "file_path": file_path,
+        }
+        save_metadata_from_doc(guest_id, file_metadata)
+        short_summary = docs[0].page_content[:1500]
+
+        save_summary(short_summary, guest_id)
+        redis_client.set(f'status:{guest_id}',"completed")
+
+    except Exception as e:
+        redis_client.set(f'status:{guest_id}',"failed")
+        print("Embedding Error:", e)
 
 
 

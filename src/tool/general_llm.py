@@ -35,7 +35,6 @@ async def route_general_llm(query:str,guest_id:str)->str:
     general_llm_chain=prompt | llm1 | parser
     chat_history=load_chat_from_redis(guest_id)
     result=general_llm_chain.invoke({'query':query,'chat_history':chat_history})
-    save_chat_in_redis(guest_id,'assitant',AIMessage(result).content)
     return result
 
  

@@ -31,5 +31,5 @@ async def route_dacument_rag(query,guest_id):
         return {
             "ai_message": "AI services are currently unavailable."
         }
-    save_chat_in_redis(guest_id,'assitant',AIMessage(result).content)
+    
     return result

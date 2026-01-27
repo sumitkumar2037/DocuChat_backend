@@ -40,7 +40,6 @@ async def route_web_search(query,guest_id):
         
         content=result['results'][-1]['content']
         final_result=web_searcg_chain.invoke({'query':query,'search_results':content})
-        save_chat_in_redis(guest_id, 'assistant', AIMessage(final_result).content)
         
         return final_result
         
