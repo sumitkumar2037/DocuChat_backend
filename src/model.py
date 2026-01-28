@@ -63,7 +63,7 @@ text_splitter=RecursiveCharacterTextSplitter(
 
 #embedding vector model  
 google_embedding=GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004"
+    model="models/text-embedding-004",
 )
 pc_index="langchain" 
 pc=PineconeVectorStore(

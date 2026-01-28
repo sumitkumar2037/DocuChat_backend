@@ -26,7 +26,7 @@ Engage naturally with the user's question."""),
     ("user", "{query}")
 ])
 llm1=ChatGroq(model='openai/gpt-oss-safeguard-20b')
-llm2=ChatOpenAI(base_url='hhtps://openrouter.ai/api/v1',model='nvidia/nemotron-3-nano-30b-a3b:free')
+llm2=ChatOpenAI(base_url='https://openrouter.ai/api/v1',model='nvidia/nemotron-3-nano-30b-a3b:free')
 parser=StrOutputParser()
 
 
