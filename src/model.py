@@ -63,8 +63,11 @@ text_splitter=RecursiveCharacterTextSplitter(
 
 #embedding vector model  
 google_embedding=GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004",
-)
+     model="gemini-embedding-001",
+    google_api_version="v1",
+    output_dimensionality=768
+ )   
+
 pc_index="langchain" 
 pc=PineconeVectorStore(
     embedding=google_embedding,
@@ -74,7 +77,7 @@ def embed_chunk_to_pinecone(session_id:str,docs:list):
     chunk=text_splitter.split_documents(docs)
     pc.add_documents(chunk)
 
-
+ 
 
 if __name__=='__main__':
     embed_chunk_to_pinecone('',[])
